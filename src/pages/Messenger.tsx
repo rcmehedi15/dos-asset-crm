@@ -288,6 +288,10 @@ const Messenger = () => {
 
       if (groupError) throw groupError;
 
+      if (!groupData || !groupData.id) {
+        throw new Error("Group creation failed: No group ID returned");
+      }
+
       // Add selected members
       const membersToAdd = [...selectedUsers, user.id].map((userId) => ({
         group_id: groupData.id,

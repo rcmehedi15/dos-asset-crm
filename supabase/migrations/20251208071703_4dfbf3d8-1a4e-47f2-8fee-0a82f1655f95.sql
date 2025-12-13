@@ -8,7 +8,8 @@ CREATE TABLE public.notifications (
   type TEXT NOT NULL CHECK (type IN (
     'lead_assigned',
     'follow_up_due',
-    'priority_update'
+    'priority_update',
+    'notice'
   )),
   title TEXT NOT NULL,
   message TEXT NOT NULL,
