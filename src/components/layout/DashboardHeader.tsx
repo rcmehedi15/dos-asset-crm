@@ -67,6 +67,8 @@ export const DashboardHeader = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [noticeDialogOpen, setNoticeDialogOpen] = useState(false);
+  const [viewNoticeDialogOpen, setViewNoticeDialogOpen] = useState(false);
+  const [selectedNotice, setSelectedNotice] = useState<Notification | null>(null);
   const [editForm, setEditForm] = useState({
     full_name: "",
     phone: "",
@@ -175,7 +177,10 @@ export const DashboardHeader = () => {
     
     fetchNotifications();
     
-    if (notification.lead_id) {
+    if (notification.type === 'notice') {
+      setSelectedNotice(notification);
+      setViewNoticeDialogOpen(true);
+    } else if (notification.lead_id) {
       navigate(`/leads/${notification.lead_id}`);
     }
   };
@@ -433,6 +438,14 @@ export const DashboardHeader = () => {
                 </DropdownMenuItem>
               ))
             )}
+            {notifications.length > 0 && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="justify-center text-sm text-muted-foreground">
+                  View all notifications
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -673,6 +686,26 @@ export const DashboardHeader = () => {
             </Button>
             <Button onClick={handleSendNotice} disabled={saving}>
               {saving ? "Sending..." : "Send Notice"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Notice Dialog */}
+      <Dialog open={viewNoticeDialogOpen} onOpenChange={setViewNoticeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedNotice?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground mb-2">
+              Sent on {selectedNotice ? new Date(selectedNotice.created_at).toLocaleString() : ''}
+            </p>
+            <p className="whitespace-pre-wrap">{selectedNotice?.message}</p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setViewNoticeDialogOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
