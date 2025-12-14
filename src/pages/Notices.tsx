@@ -37,22 +37,33 @@ const Notices = () => {
   }, [user?.id]);
 
   const fetchNotices = async () => {
-    if (!user?.id) return;
-
     try {
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
-        .eq("user_id", user.id)
         .eq("type", "notice")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
+
       setNotices(data || []);
     } catch (error: any) {
       console.error("Error fetching notices:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const markAsRead = async (noticeId: string) => {
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("id", noticeId);
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error("Error marking notice as read:", error);
     }
   };
 
