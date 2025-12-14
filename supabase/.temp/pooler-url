@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 postgresql://postgres.qeynmvfxbpowekoybnbs@aws-1-ap-south-1.pooler.supabase.com:5432/postgres
+=======
+postgresql://postgres.uyplfceobdavxhyofgvy@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres
+>>>>>>> b665eebac8eb98c97886cb3793e8ad972bf78ef1
