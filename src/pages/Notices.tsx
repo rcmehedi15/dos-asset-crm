@@ -24,7 +24,7 @@ interface Notification {
 }
 
 const Notices = () => {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const [notices, setNotices] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedNotice, setSelectedNotice] = useState<Notification | null>(null);
@@ -67,6 +67,11 @@ const Notices = () => {
   };
 
   const handleEditNotice = async (notice: Notification) => {
+    if (userRole !== "admin") {
+      alert("You do not have permission to edit notices.");
+      return;
+    }
+
     const updatedTitle = prompt("Edit Notice Title", notice.title);
     const updatedMessage = prompt("Edit Notice Message", notice.message);
 
@@ -89,6 +94,11 @@ const Notices = () => {
   };
 
   const handleDeleteNotice = async (noticeId: string) => {
+    if (userRole !== "admin") {
+      alert("You do not have permission to delete notices.");
+      return;
+    }
+
     if (!confirm("Are you sure you want to delete this notice?")) return;
 
     try {
@@ -175,14 +185,16 @@ const Notices = () => {
                         {getTimeAgo(notice.created_at)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEditNotice(notice)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDeleteNotice(notice.id)}>
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    {userRole === "admin" && (
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleEditNotice(notice)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteNotice(notice.id)}>
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
