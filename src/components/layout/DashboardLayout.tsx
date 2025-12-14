@@ -22,7 +22,6 @@ const getNavigation = (userRole: string | null) => {
   const baseNav = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Entry New Lead", href: "/leads/new", icon: PlusCircle },
-    { name: "Notices", href: "/notices", icon: Bell },
   ];
 
   if (userRole === "salesman") {
@@ -114,6 +113,23 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
               );
             })}
           </nav>
+
+          {/* Notices at bottom */}
+          <div className="p-4 border-t border-border">
+            <Link
+              to="/notices"
+              onClick={() => setMobileMenuOpen(false)}
+              className={cn(
+                "flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors",
+                location.pathname === "/notices"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+              )}
+            >
+              <Bell className="h-5 w-5" />
+              <span className="font-medium">Notices</span>
+            </Link>
+          </div>
 
           {/* Settings at bottom for admin/digital_marketer */}
           {showSettings && (
