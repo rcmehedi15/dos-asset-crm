@@ -18,6 +18,8 @@ import { Textarea } from "@/components/ui/textarea";
 
 interface Notification {
   id: string;
+  user_id: string;
+  lead_id: string | null;
   title: string;
   message: string;
   is_read: boolean;
@@ -61,7 +63,21 @@ const Notices = () => {
       const { data, error } = await query;
 
       if (error) throw error;
-      setNotices(data || []);
+
+      // For admin, group by title and message to show unique notices
+      let noticesData = data || [];
+      if (userRole === "admin") {
+        const grouped = noticesData.reduce((acc, notice) => {
+          const key = `${notice.title}|${notice.message}`;
+          if (!acc[key] || new Date(notice.created_at) > new Date(acc[key].created_at)) {
+            acc[key] = notice;
+          }
+          return acc;
+        }, {} as Record<string, Notification>);
+        noticesData = Object.values(grouped);
+      }
+
+      setNotices(noticesData);
     } catch (error: unknown) {
       console.error("Error fetching notices:", error);
     } finally {
@@ -103,19 +119,21 @@ const Notices = () => {
     setEditNoticeDialogOpen(true);
   };
 
-  const handleDeleteNotice = async (noticeId: string) => {
+  const handleDeleteNotice = async (notice: Notification) => {
     if (userRole !== "admin") {
       alert("You do not have permission to delete notices.");
       return;
     }
 
-    if (!confirm("Are you sure you want to delete this notice?")) return;
+    if (!confirm("Are you sure you want to delete this notice? This will remove it for all users.")) return;
 
     try {
       const { error } = await supabase
         .from("notifications")
         .delete()
-        .eq("id", noticeId);
+        .eq("title", notice.title)
+        .eq("message", notice.message)
+        .eq("type", "notice");
 
       if (error) throw error;
 
@@ -139,7 +157,9 @@ const Notices = () => {
       const { error } = await supabase
         .from("notifications")
         .update({ title: editNotice.title, message: editNotice.message })
-        .eq("id", editingNotice.id);
+        .eq("title", editingNotice.title)
+        .eq("message", editingNotice.message)
+        .eq("type", "notice");
 
       if (error) throw error;
 
@@ -271,10 +291,10 @@ const Notices = () => {
                     </div>
                     {userRole === "admin" && (
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEditNotice(notice)}>
+                        <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleEditNotice(notice); }}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteNotice(notice.id)}>
+                        <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteNotice(notice); }}>
                           <Trash className="h-4 w-4" />
                         </Button>
                       </div>
