@@ -12,6 +12,7 @@ import {
   CheckSquare,
   MessageSquare,
   Settings,
+  Bell,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ const getNavigation = (userRole: string | null) => {
   const baseNav = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Entry New Lead", href: "/leads/new", icon: PlusCircle },
+    { name: "Notices", href: "/notices", icon: Bell },
   ];
 
   if (userRole === "salesman") {

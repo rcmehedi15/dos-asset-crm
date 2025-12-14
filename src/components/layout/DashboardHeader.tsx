@@ -441,7 +441,10 @@ export const DashboardHeader = () => {
             {notifications.length > 0 && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="justify-center text-sm text-muted-foreground">
+                <DropdownMenuItem
+                  className="justify-center text-sm text-muted-foreground cursor-pointer"
+                  onClick={() => navigate('/notices')}
+                >
                   View all notifications
                 </DropdownMenuItem>
               </>

@@ -21,6 +21,7 @@ import LeadList from "./pages/LeadList";
 import Tasks from "./pages/Tasks";
 import Settings from "./pages/Settings";
 import Messenger from "./pages/Messenger";
+import Notices from "./pages/Notices";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -137,6 +138,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Messenger />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/notices"
+                element={
+                  <ProtectedRoute>
+                    <Notices />
                   </ProtectedRoute>
                 }
               />
