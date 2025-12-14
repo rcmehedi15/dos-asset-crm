@@ -5,6 +5,14 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Bell } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface Notification {
   id: string;
@@ -19,6 +27,8 @@ const Notices = () => {
   const { user } = useAuth();
   const [notices, setNotices] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedNotice, setSelectedNotice] = useState<Notification | null>(null);
+  const [viewNoticeDialogOpen, setViewNoticeDialogOpen] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
@@ -46,23 +56,13 @@ const Notices = () => {
     }
   };
 
-  const markAsRead = async (noticeId: string) => {
-    try {
-      const { error } = await supabase
-        .from("notifications")
-        .update({ is_read: true })
-        .eq("id", noticeId);
-
-      if (error) throw error;
-
-      // Update local state
-      setNotices(prev =>
-        prev.map(notice =>
-          notice.id === noticeId ? { ...notice, is_read: true } : notice
-        )
-      );
-    } catch (error: any) {
-      console.error("Error marking notice as read:", error);
+  const handleNoticeClick = async (notice: Notification) => {
+    setSelectedNotice(notice);
+    setViewNoticeDialogOpen(true);
+    
+    // Mark as read if not already read
+    if (!notice.is_read) {
+      await markAsRead(notice.id);
     }
   };
 
@@ -117,7 +117,7 @@ const Notices = () => {
                 className={`cursor-pointer transition-colors hover:bg-muted/50 ${
                   !notice.is_read ? 'border-l-4 border-l-primary' : ''
                 }`}
-                onClick={() => !notice.is_read && markAsRead(notice.id)}
+                onClick={() => handleNoticeClick(notice)}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -144,6 +144,26 @@ const Notices = () => {
           )}
         </div>
       </div>
+
+      {/* View Notice Dialog */}
+      <Dialog open={viewNoticeDialogOpen} onOpenChange={setViewNoticeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedNotice?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground mb-2">
+              Sent on {selectedNotice ? new Date(selectedNotice.created_at).toLocaleString() : ''}
+            </p>
+            <p className="whitespace-pre-wrap">{selectedNotice?.message}</p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setViewNoticeDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
