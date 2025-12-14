@@ -312,7 +312,8 @@ const Messenger = () => {
       fetchGroups();
     } catch (error: unknown) {
       console.error("Error creating group:", error);
-      toast.error("Failed to create group: " + (error instanceof Error ? error.message : "Unknown error"));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      toast.error("Failed to create group: " + errorMessage);
     }
   };
 
