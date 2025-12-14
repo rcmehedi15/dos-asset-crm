@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Bell } from "lucide-react";
+import { Bell, Edit, Trash } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,7 @@ interface Notification {
 }
 
 const Notices = () => {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const [notices, setNotices] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedNotice, setSelectedNotice] = useState<Notification | null>(null);
@@ -37,33 +37,22 @@ const Notices = () => {
   }, [user?.id]);
 
   const fetchNotices = async () => {
+    if (!user?.id) return;
+
     try {
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
+        .eq("user_id", user.id)
         .eq("type", "notice")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-
       setNotices(data || []);
     } catch (error: any) {
       console.error("Error fetching notices:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const markAsRead = async (noticeId: string) => {
-    try {
-      const { error } = await supabase
-        .from("notifications")
-        .update({ is_read: true })
-        .eq("id", noticeId);
-
-      if (error) throw error;
-    } catch (error: any) {
-      console.error("Error marking notice as read:", error);
     }
   };
 
@@ -74,6 +63,57 @@ const Notices = () => {
     // Mark as read if not already read
     if (!notice.is_read) {
       await markAsRead(notice.id);
+    }
+  };
+
+  const handleEditNotice = async (notice: Notification) => {
+    if (userRole !== "admin") {
+      alert("You do not have permission to edit notices.");
+      return;
+    }
+
+    const updatedTitle = prompt("Edit Notice Title", notice.title);
+    const updatedMessage = prompt("Edit Notice Message", notice.message);
+
+    if (!updatedTitle || !updatedMessage) return;
+
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ title: updatedTitle, message: updatedMessage })
+        .eq("id", notice.id);
+
+      if (error) throw error;
+
+      alert("Notice updated successfully");
+      fetchNotices();
+    } catch (error: any) {
+      console.error("Error updating notice:", error);
+      alert("Failed to update notice");
+    }
+  };
+
+  const handleDeleteNotice = async (noticeId: string) => {
+    if (userRole !== "admin") {
+      alert("You do not have permission to delete notices.");
+      return;
+    }
+
+    if (!confirm("Are you sure you want to delete this notice?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .delete()
+        .eq("id", noticeId);
+
+      if (error) throw error;
+
+      alert("Notice deleted successfully");
+      fetchNotices();
+    } catch (error: any) {
+      console.error("Error deleting notice:", error);
+      alert("Failed to delete notice");
     }
   };
 
@@ -145,6 +185,16 @@ const Notices = () => {
                         {getTimeAgo(notice.created_at)}
                       </p>
                     </div>
+                    {userRole === "admin" && (
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleEditNotice(notice)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteNotice(notice.id)}>
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
