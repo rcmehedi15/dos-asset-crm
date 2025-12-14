@@ -35,6 +35,8 @@ const Notices = () => {
   const [viewNoticeDialogOpen, setViewNoticeDialogOpen] = useState(false);
   const [createNoticeDialogOpen, setCreateNoticeDialogOpen] = useState(false);
   const [editNoticeDialogOpen, setEditNoticeDialogOpen] = useState(false);
+  const [deleteNoticeDialogOpen, setDeleteNoticeDialogOpen] = useState(false);
+  const [deletingNotice, setDeletingNotice] = useState<Notification | null>(null);
   const [editingNotice, setEditingNotice] = useState<Notification | null>(null);
   const [newNotice, setNewNotice] = useState({ title: "", message: "" });
   const [editNotice, setEditNotice] = useState({ title: "", message: "" });
@@ -119,32 +121,15 @@ const Notices = () => {
     setEditNoticeDialogOpen(true);
   };
 
-  const handleDeleteNotice = async (notice: Notification) => {
+  const handleDeleteNotice = (notice: Notification) => {
     if (userRole !== "admin") {
       alert("You do not have permission to delete notices.");
       return;
     }
 
-    if (!confirm("Are you sure you want to delete this notice? This will remove it for all users.")) return;
-
-    try {
-      const { error } = await supabase
-        .from("notifications")
-        .delete()
-        .eq("title", notice.title)
-        .eq("message", notice.message)
-        .eq("type", "notice");
-
-      if (error) throw error;
-
-      alert("Notice deleted successfully");
-      fetchNotices();
-    } catch (error: unknown) {
-      console.error("Error deleting notice:", error);
-      alert("Failed to delete notice");
-    }
+    setDeletingNotice(notice);
+    setDeleteNoticeDialogOpen(true);
   };
-
   const handleUpdateNotice = async () => {
     if (!editingNotice) return;
 
@@ -212,6 +197,29 @@ const Notices = () => {
     } catch (error: unknown) {
       console.error("Error creating notice:", error);
       alert("Failed to create notice");
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingNotice) return;
+
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .delete()
+        .eq("title", deletingNotice.title)
+        .eq("message", deletingNotice.message)
+        .eq("type", "notice");
+
+      if (error) throw error;
+
+      alert("Notice deleted successfully");
+      setDeleteNoticeDialogOpen(false);
+      setDeletingNotice(null);
+      fetchNotices();
+    } catch (error: unknown) {
+      console.error("Error deleting notice:", error);
+      alert("Failed to delete notice");
     }
   };
 
@@ -397,6 +405,32 @@ const Notices = () => {
             </Button>
             <Button onClick={handleUpdateNotice}>
               Update Notice
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Notice Dialog */}
+      <Dialog open={deleteNoticeDialogOpen} onOpenChange={setDeleteNoticeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Notice</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Are you sure you want to delete this notice? This will remove it for all users.</p>
+            {deletingNotice && (
+              <div className="mt-4 p-4 bg-muted rounded">
+                <h4 className="font-semibold">{deletingNotice.title}</h4>
+                <p className="text-sm text-muted-foreground mt-1">{deletingNotice.message}</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteNoticeDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Delete Notice
             </Button>
           </DialogFooter>
         </DialogContent>
