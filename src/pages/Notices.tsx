@@ -153,6 +153,8 @@ const Notices = () => {
       alert("Failed to update notice");
     }
   };
+
+  const handleCreateNotice = async () => {
     if (userRole !== "admin") {
       alert("You do not have permission to create notices.");
       return;
@@ -339,6 +341,42 @@ const Notices = () => {
             </Button>
             <Button onClick={handleCreateNotice}>
               Create Notice
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Notice Dialog */}
+      <Dialog open={editNoticeDialogOpen} onOpenChange={setEditNoticeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Notice</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div>
+              <label className="text-sm font-medium">Title</label>
+              <Input
+                value={editNotice.title}
+                onChange={(e) => setEditNotice({ ...editNotice, title: e.target.value })}
+                placeholder="Enter notice title"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Message</label>
+              <Textarea
+                value={editNotice.message}
+                onChange={(e) => setEditNotice({ ...editNotice, message: e.target.value })}
+                placeholder="Enter notice message"
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditNoticeDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateNotice}>
+              Update Notice
             </Button>
           </DialogFooter>
         </DialogContent>
