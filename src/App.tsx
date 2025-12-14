@@ -22,7 +22,6 @@ import Tasks from "./pages/Tasks";
 import Settings from "./pages/Settings";
 import Messenger from "./pages/Messenger";
 import Notices from "./pages/Notices";
-import NoticeManagement from "./pages/NoticeManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -147,14 +146,6 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Notices />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/notice-management"
-                element={
-                  <ProtectedRoute>
-                    <NoticeManagement />
                   </ProtectedRoute>
                 }
               />
