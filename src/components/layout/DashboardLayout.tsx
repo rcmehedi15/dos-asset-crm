@@ -47,6 +47,7 @@ const getNavigation = (userRole: string | null) => {
   // Only admin gets Users management
   if (userRole === "admin") {
     managerNav.push({ name: "Users", href: "/users", icon: Users });
+    managerNav.push({ name: "Notice Management", href: "/notice-management", icon: Bell });
   }
 
   return managerNav;
