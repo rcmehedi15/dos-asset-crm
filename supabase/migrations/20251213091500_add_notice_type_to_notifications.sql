@@ -11,4 +11,4 @@ ALTER TABLE public.notifications ADD CONSTRAINT notifications_type_check CHECK (
 ));
 
 -- Ensure realtime publication still includes the table (no-op if already present)
-ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
