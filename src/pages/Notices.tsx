@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Bell } from "lucide-react";
+import { Bell, Edit, Trash } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -63,6 +63,47 @@ const Notices = () => {
     // Mark as read if not already read
     if (!notice.is_read) {
       await markAsRead(notice.id);
+    }
+  };
+
+  const handleEditNotice = async (notice: Notification) => {
+    const updatedTitle = prompt("Edit Notice Title", notice.title);
+    const updatedMessage = prompt("Edit Notice Message", notice.message);
+
+    if (!updatedTitle || !updatedMessage) return;
+
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ title: updatedTitle, message: updatedMessage })
+        .eq("id", notice.id);
+
+      if (error) throw error;
+
+      alert("Notice updated successfully");
+      fetchNotices();
+    } catch (error: any) {
+      console.error("Error updating notice:", error);
+      alert("Failed to update notice");
+    }
+  };
+
+  const handleDeleteNotice = async (noticeId: string) => {
+    if (!confirm("Are you sure you want to delete this notice?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .delete()
+        .eq("id", noticeId);
+
+      if (error) throw error;
+
+      alert("Notice deleted successfully");
+      fetchNotices();
+    } catch (error: any) {
+      console.error("Error deleting notice:", error);
+      alert("Failed to delete notice");
     }
   };
 
@@ -133,6 +174,14 @@ const Notices = () => {
                       <p className="text-sm text-muted-foreground mt-1">
                         {getTimeAgo(notice.created_at)}
                       </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => handleEditNotice(notice)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteNotice(notice.id)}>
+                        <Trash className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
