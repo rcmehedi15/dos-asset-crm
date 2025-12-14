@@ -49,10 +49,23 @@ const Notices = () => {
 
       if (error) throw error;
       setNotices(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching notices:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const markAsRead = async (noticeId: string) => {
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("id", noticeId);
+
+      if (error) throw error;
+    } catch (error: unknown) {
+      console.error("Error marking notice as read:", error);
     }
   };
 
@@ -87,7 +100,7 @@ const Notices = () => {
 
       alert("Notice updated successfully");
       fetchNotices();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating notice:", error);
       alert("Failed to update notice");
     }
@@ -111,7 +124,7 @@ const Notices = () => {
 
       alert("Notice deleted successfully");
       fetchNotices();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error deleting notice:", error);
       alert("Failed to delete notice");
     }

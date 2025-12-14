@@ -123,7 +123,7 @@ const NewLead = () => {
           ...leadData,
           created_by: user?.id,
           assigned_to: userRole === "salesman" ? user?.id : null,
-          status: "new" as "new",
+          status: "new" as const,
         });
 
         if (error) throw error;
@@ -258,9 +258,9 @@ const NewLead = () => {
         const lead: any = {
           created_by: user?.id,
           assigned_to: userRole === "salesman" ? user?.id : null,
-          status: "new" as "new",
+          status: "new" as const,
           stage: userRole === "salesman" ? "SGL" : "MQL",
-          source: "other" as "other",
+          source: "other" as const,
         };
 
         headers.forEach((header, index) => {
