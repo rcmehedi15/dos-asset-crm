@@ -133,14 +133,14 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              <Route
+              {/* <Route
                 path="/messenger"
                 element={
                   <ProtectedRoute>
                     <Messenger />
                   </ProtectedRoute>
                 }
-              />
+              /> */}
               <Route
                 path="/notices"
                 element={
