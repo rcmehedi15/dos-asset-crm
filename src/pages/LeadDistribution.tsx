@@ -53,6 +53,15 @@ const LeadDistribution = () => {
     fetchData();
   }, []);
 
+  // Live update for duration badges
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLeads((prev) => [...prev]);
+    }, 60000); // refresh every 1 min
+
+    return () => clearInterval(interval);
+  }, []);
+
   const fetchData = async () => {
     try {
       const { data, error } = await supabase
@@ -70,7 +79,7 @@ const LeadDistribution = () => {
   };
 
   /* ============================
-     ⏱ HUMAN READABLE DURATION
+     ⏱ Human readable lead duration
   ============================ */
   const getLeadDuration = (createdAt: string) => {
     const now = new Date();
@@ -100,16 +109,20 @@ const LeadDistribution = () => {
     }
 
     if (months <= 3) {
-      return {
-        label: `${months} month`,
-        className: "bg-yellow-400 text-black",
-      };
+      return { label: `${months} month`, className: "bg-yellow-400 text-black" };
     }
 
-    return {
-      label: `${months} month`,
-      className: "bg-red-500 text-white",
+    return { label: `${months} month`, className: "bg-red-500 text-white" };
+  };
+
+  const stageBadgeColor = (stage: string | null) => {
+    const colors: Record<string, string> = {
+      MQL: "bg-accent text-accent-foreground",
+      SGL: "bg-primary text-primary-foreground",
+      Lead: "bg-success text-success-foreground",
+      SQL: "bg-warning text-warning-foreground",
     };
+    return colors[stage || ""] || "bg-muted text-muted-foreground";
   };
 
   return (
@@ -123,8 +136,11 @@ const LeadDistribution = () => {
                 <TableHead>LEAD CODE</TableHead>
                 <TableHead>CUSTOMER</TableHead>
                 <TableHead>MOBILE</TableHead>
+                <TableHead>PROJECT</TableHead>
                 <TableHead>SOURCE</TableHead>
+                <TableHead>STAGE</TableHead>
                 <TableHead>DURATION</TableHead>
+                <TableHead>AGENT</TableHead>
                 <TableHead className="text-right">ACTIONS</TableHead>
               </TableRow>
             </TableHeader>
@@ -132,7 +148,7 @@ const LeadDistribution = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-6">
+                  <TableCell colSpan={10} className="text-center py-6">
                     Loading...
                   </TableCell>
                 </TableRow>
@@ -144,19 +160,39 @@ const LeadDistribution = () => {
                     <TableRow key={lead.id}>
                       <TableCell>{index + 1}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">
-                          {lead.lead_code || "-"}
-                        </Badge>
+                        <Badge variant="outline">{lead.lead_code || "-"}</Badge>
                       </TableCell>
                       <TableCell>{lead.name}</TableCell>
                       <TableCell>{lead.phone}</TableCell>
+                      <TableCell>{lead.project_name || "-"}</TableCell>
                       <TableCell>{lead.source}</TableCell>
+                      <TableCell>
+                        <Badge className={stageBadgeColor(lead.stage)}>
+                          {lead.stage || "Lead"}
+                        </Badge>
+                      </TableCell>
 
-                      {/* ✅ LIVE DURATION */}
+                      {/* ✅ Duration */}
                       <TableCell>
                         <Badge className={duration.className}>
                           {duration.label}
                         </Badge>
+                      </TableCell>
+
+                      <TableCell>
+                        {lead.profiles ? (
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-7 w-7">
+                              <AvatarImage src={lead.profiles.avatar_url || ""} />
+                              <AvatarFallback>
+                                {lead.profiles.full_name[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            {lead.profiles.full_name}
+                          </div>
+                        ) : (
+                          "Not Assigned"
+                        )}
                       </TableCell>
 
                       <TableCell className="text-right space-x-2">
@@ -165,7 +201,7 @@ const LeadDistribution = () => {
                           variant="outline"
                           onClick={() => navigate(`/leads/${lead.id}`)}
                         >
-                         History
+                          History
                         </Button>
 
                         {canManageLeads && (
@@ -183,13 +219,13 @@ const LeadDistribution = () => {
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={async () => {
-                              await supabase
+                            onClick={() =>
+                              supabase
                                 .from("leads")
                                 .delete()
-                                .eq("id", lead.id);
-                              fetchData();
-                            }}
+                                .eq("id", lead.id)
+                                .then(fetchData)
+                            }
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
