@@ -8,13 +8,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -22,16 +15,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { History, Trash2, Edit, ArrowRightLeft } from "lucide-react";
+import { History, Trash2, Edit } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 
 interface Lead {
   id: string;
@@ -45,7 +30,6 @@ interface Lead {
   lead_code: string | null;
   profiles?: {
     full_name: string;
-    email: string;
     avatar_url: string | null;
   };
 }
@@ -53,17 +37,12 @@ interface Lead {
 interface Profile {
   id: string;
   full_name: string;
-  email: string;
   avatar_url: string | null;
 }
 
 const LeadDistribution = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [salespeople, setSalespeople] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [selectedSalesperson, setSelectedSalesperson] = useState("");
   const navigate = useNavigate();
   const { userRole } = useAuth();
 
@@ -76,69 +55,13 @@ const LeadDistribution = () => {
 
   const fetchData = async () => {
     try {
-      const { data: leadsData, error } = await supabase
+      const { data, error } = await supabase
         .from("leads")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-
-      const assignedIds =
-        leadsData?.map((l) => l.assigned_to).filter(Boolean) as string[];
-
-      let profilesMap: Record<
-        string,
-        { full_name: string; email: string; avatar_url: string | null }
-      > = {};
-
-      if (assignedIds.length > 0) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("id, full_name, email, avatar_url")
-          .in("id", assignedIds);
-
-        if (data) {
-          profilesMap = data.reduce(
-            (acc, p) => ({
-              ...acc,
-              [p.id]: {
-                full_name: p.full_name,
-                email: p.email,
-                avatar_url: p.avatar_url,
-              },
-            }),
-            {}
-          );
-        }
-      }
-
-      const leadsWithProfiles =
-        leadsData?.map((lead) => ({
-          ...lead,
-          profiles: lead.assigned_to
-            ? profilesMap[lead.assigned_to]
-            : undefined,
-        })) || [];
-
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "salesman");
-
-      const salesIds = roles?.map((r) => r.user_id) || [];
-
-      let salesProfiles: Profile[] = [];
-      if (salesIds.length > 0) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("id, full_name, email, avatar_url")
-          .in("id", salesIds);
-
-        salesProfiles = data as Profile[];
-      }
-
-      setLeads(leadsWithProfiles);
-      setSalespeople(salesProfiles);
+      setLeads(data || []);
     } catch {
       toast.error("Failed to load leads");
     } finally {
@@ -146,45 +69,47 @@ const LeadDistribution = () => {
     }
   };
 
-  /* ======================
-     LEAD DURATION LOGIC
-  ====================== */
+  /* ============================
+     ⏱ HUMAN READABLE DURATION
+  ============================ */
   const getLeadDuration = (createdAt: string) => {
-    const created = new Date(createdAt);
     const now = new Date();
-    const diffDays = Math.floor(
-      (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    const months = diffDays / 30;
+    const created = new Date(createdAt);
+    const diffMs = now.getTime() - created.getTime();
 
-    if (months <= 1) {
-      return {
-        label: `${diffDays} days`,
-        className: "bg-green-500 text-white",
-      };
+    const seconds = Math.floor(diffMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    const months = Math.floor(days / 30);
+
+    if (seconds < 60) {
+      return { label: `${seconds} sec`, className: "bg-green-500 text-white" };
+    }
+
+    if (minutes < 60) {
+      return { label: `${minutes} min`, className: "bg-green-500 text-white" };
+    }
+
+    if (hours < 24) {
+      return { label: `${hours} hour`, className: "bg-green-500 text-white" };
+    }
+
+    if (days < 30) {
+      return { label: `${days} day`, className: "bg-green-500 text-white" };
     }
 
     if (months <= 3) {
       return {
-        label: `${Math.floor(months)} months`,
+        label: `${months} month`,
         className: "bg-yellow-400 text-black",
       };
     }
 
     return {
-      label: `${Math.floor(months)} months`,
+      label: `${months} month`,
       className: "bg-red-500 text-white",
     };
-  };
-
-  const stageBadgeColor = (stage: string | null) => {
-    const colors: Record<string, string> = {
-      MQL: "bg-accent text-accent-foreground",
-      SGL: "bg-primary text-primary-foreground",
-      Lead: "bg-success text-success-foreground",
-      SQL: "bg-warning text-warning-foreground",
-    };
-    return colors[stage || ""] || "bg-muted text-muted-foreground";
   };
 
   return (
@@ -198,11 +123,8 @@ const LeadDistribution = () => {
                 <TableHead>LEAD CODE</TableHead>
                 <TableHead>CUSTOMER</TableHead>
                 <TableHead>MOBILE</TableHead>
-                <TableHead>PROJECT</TableHead>
                 <TableHead>SOURCE</TableHead>
-                <TableHead>STAGE</TableHead>
                 <TableHead>DURATION</TableHead>
-                <TableHead>AGENT</TableHead>
                 <TableHead className="text-right">ACTIONS</TableHead>
               </TableRow>
             </TableHeader>
@@ -210,7 +132,7 @@ const LeadDistribution = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-6">
+                  <TableCell colSpan={7} className="text-center py-6">
                     Loading...
                   </TableCell>
                 </TableRow>
@@ -228,37 +150,13 @@ const LeadDistribution = () => {
                       </TableCell>
                       <TableCell>{lead.name}</TableCell>
                       <TableCell>{lead.phone}</TableCell>
-                      <TableCell>{lead.project_name || "-"}</TableCell>
                       <TableCell>{lead.source}</TableCell>
-                      <TableCell>
-                        <Badge className={stageBadgeColor(lead.stage)}>
-                          {lead.stage || "Lead"}
-                        </Badge>
-                      </TableCell>
 
-                      {/* ✅ DURATION */}
+                      {/* ✅ LIVE DURATION */}
                       <TableCell>
                         <Badge className={duration.className}>
                           {duration.label}
                         </Badge>
-                      </TableCell>
-
-                      <TableCell>
-                        {lead.profiles ? (
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-7 w-7">
-                              <AvatarImage
-                                src={lead.profiles.avatar_url || ""}
-                              />
-                              <AvatarFallback>
-                                {lead.profiles.full_name[0]}
-                              </AvatarFallback>
-                            </Avatar>
-                            {lead.profiles.full_name}
-                          </div>
-                        ) : (
-                          "Not Assigned"
-                        )}
                       </TableCell>
 
                       <TableCell className="text-right space-x-2">
@@ -266,8 +164,8 @@ const LeadDistribution = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => navigate(`/leads/${lead.id}`)}
-                        > History
-                          <History />
+                        >
+                         History
                         </Button>
 
                         {canManageLeads && (
@@ -285,13 +183,13 @@ const LeadDistribution = () => {
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() =>
-                              supabase
+                            onClick={async () => {
+                              await supabase
                                 .from("leads")
                                 .delete()
-                                .eq("id", lead.id)
-                                .then(fetchData)
-                            }
+                                .eq("id", lead.id);
+                              fetchData();
+                            }}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
