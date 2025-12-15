@@ -1,4 +1,3 @@
-import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -88,7 +87,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                 <LayoutDashboard className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-foreground"> ASSET DEVELOPMENT LTD</h1>
+                <h1 className="text-lg font-bold text-foreground"> ASSET DEVELOPMENT </h1>
                 <p className="text-xs text-muted-foreground">Real Estate CRM</p>
               </div>
             </div>
