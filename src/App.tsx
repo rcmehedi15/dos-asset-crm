@@ -20,7 +20,7 @@ import Users from "./pages/Users";
 import LeadList from "./pages/LeadList";
 import Tasks from "./pages/Tasks";
 import Settings from "./pages/Settings";
-import Messenger from "./pages/Messenger";
+// import Messenger from "./pages/Messenger";
 import Notices from "./pages/Notices";
 import NotFound from "./pages/NotFound";
 

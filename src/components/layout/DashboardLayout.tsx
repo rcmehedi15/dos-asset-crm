@@ -40,7 +40,7 @@ const getNavigation = (userRole: string | null) => {
     { name: "Lead Distribution", href: "/lead-distribution", icon: Users },
     { name: "Reports", href: "/reports", icon: BarChart3 },
     { name: "Tasks", href: "/tasks", icon: CheckSquare },
-    { name: "Messenger", href: "/messenger", icon: MessageSquare },
+    // { name: "Messenger", href: "/messenger", icon: MessageSquare },
   ];
 
   // Only admin gets Users management
