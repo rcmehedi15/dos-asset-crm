@@ -87,7 +87,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                 <LayoutDashboard className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-foreground">DOS</h1>
+                <h1 className="text-lg font-bold text-foreground"> ASSET DEVELOPMENT LTD</h1>
                 <p className="text-xs text-muted-foreground">Real Estate CRM</p>
               </div>
             </div>
