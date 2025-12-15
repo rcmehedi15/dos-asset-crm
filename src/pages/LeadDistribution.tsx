@@ -266,7 +266,7 @@ const LeadDistribution = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => navigate(`/leads/${lead.id}`)}
-                        >
+                        > History
                           <History className="h-4 w-4" />
                         </Button>
 
