@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard,
+  Home,
   Users,
   PlusCircle,
   Menu,
@@ -20,7 +20,7 @@ import { DashboardHeader } from "./DashboardHeader";
 
 const getNavigation = (userRole: string | null) => {
   const baseNav = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Dashboard", href: "/dashboard", icon: Home },
     { name: "Entry New Lead", href: "/leads/new", icon: PlusCircle },
     { name: "Notices", href: "/notices", icon: Bell },
   ];
@@ -84,7 +84,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
           <div className="p-6 border-b border-border">
             <div className="flex items-center space-x-3">
               <div className="p-2 rounded-lg bg-primary/10">
-                <LayoutDashboard className="h-6 w-6 text-primary" />
+                <img src="/favicon.ico" alt="Logo" className="h-6 w-6" />
               </div>
               <div>
                 <h1 className="text-lg font-bold text-foreground"> ASSET DEVELOPMENT </h1>
