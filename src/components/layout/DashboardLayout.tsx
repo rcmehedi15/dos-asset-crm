@@ -31,7 +31,6 @@ const getNavigation = (userRole: string | null) => {
       { name: "Lead List", href: "/lead-list", icon: ListChecks },
       { name: "Reports", href: "/reports", icon: BarChart3 },
       { name: "Tasks", href: "/tasks", icon: CheckSquare },
-      { name: "Messenger", href: "/messenger", icon: MessageSquare },
     ];
   }
 
