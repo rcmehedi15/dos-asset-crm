@@ -69,6 +69,7 @@ const LeadDistribution = () => {
 
   const canManageLeads = userRole === "admin" || userRole === "digital_marketer";
 
+  // Fetch data
   useEffect(() => {
     fetchData();
   }, []);
@@ -84,19 +85,16 @@ const LeadDistribution = () => {
       if (leadsError) throw leadsError;
 
       // Fetch assigned profiles separately
-      const assignedIds = leadsData
-        ?.map((l) => l.assigned_to)
-        .filter(Boolean) as string[];
+      const assignedIds = leadsData?.map((l) => l.assigned_to).filter(Boolean) as string[];
 
       let profilesMap: Record<string, { full_name: string; email: string; avatar_url: string | null }> = {};
-      
       if (assignedIds.length > 0) {
-        const { data: profilesData, error: profilesError } = await supabase
+        const { data: profilesData } = await supabase
           .from("profiles")
           .select("id, full_name, email, avatar_url")
           .in("id", assignedIds);
 
-        if (!profilesError && profilesData) {
+        if (profilesData) {
           profilesMap = profilesData.reduce(
             (acc, p) => ({ ...acc, [p.id]: { full_name: p.full_name, email: p.email, avatar_url: p.avatar_url } }),
             {}
@@ -104,42 +102,68 @@ const LeadDistribution = () => {
         }
       }
 
-      // Map profiles to leads
       const leadsWithProfiles = leadsData?.map((lead) => ({
         ...lead,
         profiles: lead.assigned_to ? profilesMap[lead.assigned_to] : undefined,
       })) || [];
 
-      // Fetch all salespeople (users with salesman role)
-      const { data: salesRolesData, error: salesError } = await supabase
+      // Fetch all salespeople
+      const { data: salesRolesData } = await supabase
         .from("user_roles")
         .select("user_id")
         .eq("role", "salesman");
 
-      if (salesError) throw salesError;
-
       const salesUserIds = salesRolesData?.map((r) => r.user_id) || [];
-      
       let salesProfiles: Profile[] = [];
+
       if (salesUserIds.length > 0) {
-        const { data: salesProfilesData, error: salesProfilesError } = await supabase
+        const { data: salesProfilesData } = await supabase
           .from("profiles")
           .select("id, full_name, email, avatar_url")
           .in("id", salesUserIds);
 
-        if (!salesProfilesError && salesProfilesData) {
-          salesProfiles = salesProfilesData as Profile[];
-        }
+        salesProfiles = salesProfilesData as Profile[];
       }
 
       setLeads(leadsWithProfiles);
       setSalespeople(salesProfiles);
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Error loading data");
     } finally {
       setLoading(false);
     }
   };
+
+  // Lead duration logic
+  const getLeadDuration = (createdAt: string) => {
+    const now = new Date();
+    const created = new Date(createdAt);
+    const diffMs = now.getTime() - created.getTime();
+
+    const seconds = Math.floor(diffMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    const months = Math.floor(days / 30);
+
+    if (seconds < 60)
+      return { label: `${seconds} sec`, className: "bg-green-500 text-white" };
+    if (minutes < 60)
+      return { label: `${minutes} min`, className: "bg-green-500 text-white" };
+    if (hours < 24)
+      return { label: `${hours} hour`, className: "bg-green-500 text-white" };
+    if (days < 30)
+      return { label: `${days} day`, className: "bg-green-500 text-white" };
+    if (months <= 3)
+      return { label: `${months} month`, className: "bg-yellow-400 text-black" };
+    return { label: `${months} month`, className: "bg-red-500 text-white" };
+  };
+
+  // Refresh duration every 1 minute
+  useEffect(() => {
+    const interval = setInterval(() => setLeads((prev) => [...prev]), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleTransfer = async (leadId: string, salespersonId: string) => {
     try {
@@ -149,33 +173,23 @@ const LeadDistribution = () => {
         .eq("id", leadId);
 
       if (error) throw error;
-
       toast.success("Lead transferred successfully!");
       setTransferDialogOpen(false);
       setSelectedLead(null);
       setSelectedSalesperson("");
       fetchData();
-    } catch (error: any) {
+    } catch {
       toast.error("Error transferring lead");
     }
   };
 
   const handleDelete = async (leadId: string) => {
-    if (!window.confirm("Are you sure you want to delete this lead? This action cannot be undone.")) {
-      return;
-    }
-
+    if (!window.confirm("Are you sure you want to delete this lead?")) return;
     try {
-      const { error } = await supabase
-        .from("leads")
-        .delete()
-        .eq("id", leadId);
-
-      if (error) throw error;
-
+      await supabase.from("leads").delete().eq("id", leadId);
       toast.success("Lead deleted successfully!");
       fetchData();
-    } catch (error: any) {
+    } catch {
       toast.error("Error deleting lead");
     }
   };
@@ -186,14 +200,8 @@ const LeadDistribution = () => {
     setTransferDialogOpen(true);
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const getInitials = (name: string) => name
+    .split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 
   const stageBadgeColor = (stage: string | null) => {
     const colors: Record<string, string> = {
@@ -230,127 +238,96 @@ const LeadDistribution = () => {
                     <TableHead>PROJECT NAME</TableHead>
                     <TableHead>SOURCE</TableHead>
                     <TableHead>STAGE</TableHead>
+                    <TableHead>DURATION</TableHead>
                     <TableHead>AGENT</TableHead>
                     <TableHead className="text-right">ACTIONS</TableHead>
                   </TableRow>
                 </TableHeader>
+
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8">
-                        <div className="animate-pulse">Loading...</div>
+                      <TableCell colSpan={10} className="text-center py-8">
+                        Loading...
                       </TableCell>
                     </TableRow>
                   ) : leads.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                         No leads found
                       </TableCell>
                     </TableRow>
                   ) : (
-                    leads.map((lead, index) => (
-                      <TableRow key={lead.id} className="hover:bg-muted/50">
-                        <TableCell className="font-medium">{String(index + 1).padStart(2, "0")}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="font-mono text-xs">
-                            {lead.lead_code || "-"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-medium">{lead.name}</TableCell>
-                        <TableCell>{lead.phone}</TableCell>
-                        <TableCell>
-                          <span className="text-sm">
-                            {lead.project_name || "Not specified"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm uppercase">{lead.source.replace("_", " ")}</span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={stageBadgeColor(lead.stage)}>
-                            {lead.stage || "Lead"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {lead.profiles ? (
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={lead.profiles.avatar_url || ""} />
-                                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                  {getInitials(lead.profiles.full_name)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex flex-col">
-                                <span className="text-sm font-medium text-success">
-                                  {lead.profiles.full_name}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  Department: Sales
-                                </span>
+                    leads.map((lead, index) => {
+                      const duration = getLeadDuration(lead.created_at);
+                      return (
+                        <TableRow key={lead.id} className="hover:bg-muted/50">
+                          <TableCell>{String(index + 1).padStart(2, "0")}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="font-mono text-xs">
+                              {lead.lead_code || "-"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{lead.name}</TableCell>
+                          <TableCell>{lead.phone}</TableCell>
+                          <TableCell>{lead.project_name || "-"}</TableCell>
+                          <TableCell>{lead.source}</TableCell>
+                          <TableCell>
+                            <Badge className={stageBadgeColor(lead.stage)}>
+                              {lead.stage || "Lead"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={duration.className}>
+                              {duration.label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {lead.profiles ? (
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarImage src={lead.profiles.avatar_url || ""} />
+                                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                    {getInitials(lead.profiles.full_name)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="text-sm font-medium">{lead.profiles.full_name}</span>
                               </div>
-                            </div>
-                          ) : canManageLeads ? (
-                            <Select
-                              onValueChange={(value) => handleTransfer(lead.id, value)}
-                            >
-                              <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Assign to..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {salespeople.map((person) => (
-                                  <SelectItem key={person.id} value={person.id}>
-                                    {person.full_name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">Not assigned</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {lead.assigned_to && canManageLeads && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => openTransferDialog(lead)}
-                              >
-                                <ArrowRightLeft className="h-4 w-4 mr-1" />
-                                Transfer
-                              </Button>
+                            ) : canManageLeads ? (
+                              <Select onValueChange={(v) => handleTransfer(lead.id, v)}>
+                                <SelectTrigger className="w-[180px]">
+                                  <SelectValue placeholder="Assign to..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {salespeople.map((person) => (
+                                    <SelectItem key={person.id} value={person.id}>
+                                      {person.full_name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">Not assigned</span>
                             )}
-                            {canManageLeads && (
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => navigate(`/leads/new?edit=${lead.id}`)}
-                              >
-                                <Edit className="h-4 w-4 mr-1" />
-                                Edit
-                              </Button>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => navigate(`/leads/${lead.id}`)}
-                            >
-                              <History className="h-4 w-4 mr-1" />
-                              History
+                          </TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <Button size="sm" variant="outline" onClick={() => navigate(`/leads/${lead.id}`)}>
+                              <History className="h-4 w-4 mr-1" /> History
                             </Button>
+                            {canManageLeads && (
+                              <Button size="sm" onClick={() => navigate(`/leads/new?edit=${lead.id}`)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
                             {userRole === "admin" && (
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleDelete(lead.id)}
-                              >
+                              <Button size="sm" variant="destructive" onClick={() => handleDelete(lead.id)}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -379,41 +356,29 @@ const LeadDistribution = () => {
             )}
             <div className="space-y-2">
               <Label>Transfer to</Label>
-              <Select
-                value={selectedSalesperson}
-                onValueChange={setSelectedSalesperson}
-              >
+              <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select salesperson" />
                 </SelectTrigger>
                 <SelectContent>
-                  {salespeople
-                    .filter((p) => p.id !== selectedLead?.assigned_to)
-                    .map((person) => (
-                      <SelectItem key={person.id} value={person.id}>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={person.avatar_url || ""} />
-                            <AvatarFallback className="text-xs">
-                              {getInitials(person.full_name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          {person.full_name}
-                        </div>
-                      </SelectItem>
-                    ))}
+                  {salespeople.filter(p => p.id !== selectedLead?.assigned_to).map(person => (
+                    <SelectItem key={person.id} value={person.id}>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={person.avatar_url || ""} />
+                          <AvatarFallback className="text-xs">{getInitials(person.full_name)}</AvatarFallback>
+                        </Avatar>
+                        {person.full_name}
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setTransferDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => selectedLead && handleTransfer(selectedLead.id, selectedSalesperson)}
-              disabled={!selectedSalesperson}
-            >
+            <Button variant="outline" onClick={() => setTransferDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => selectedLead && handleTransfer(selectedLead.id, selectedSalesperson)} disabled={!selectedSalesperson}>
               Transfer Lead
             </Button>
           </DialogFooter>
