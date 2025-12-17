@@ -895,22 +895,22 @@ const LeadDetail = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Add Activity</CardTitle>
+            <CardTitle>Follow Up</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <Textarea
-              placeholder="Add a note or activity..."
+              placeholder="Add a note or Follow up..."
               value={activityNote}
               onChange={(e) => setActivityNote(e.target.value)}
               rows={3}
             />
-            <Button onClick={addActivity}>Add Activity</Button>
+            <Button onClick={addActivity}> Follow Up</Button>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Activity Timeline</CardTitle>
+            <CardTitle>Follow Up Timeline</CardTitle>
           </CardHeader>
           <CardContent>
             {activities.length === 0 ? (
