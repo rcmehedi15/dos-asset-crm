@@ -56,7 +56,7 @@ const Auth = () => {
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
             <div className="p-3 rounded-full bg-primary/10">
-            <img src="../../public/favicon.ico" alt="DOS ASSET DEVELOPMENT Logo" />
+            <img src="../../../public/logo.png" alt="DOS ASSET DEVELOPMENT Logo" />
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">
