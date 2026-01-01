@@ -60,7 +60,7 @@ const Auth = () => {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">
-             ASSET DEVELOPMENT LTD
+             DOS ASSET DEVELOPMENT
           </CardTitle>
           <CardDescription className="text-lg font-semibold">
             {isLogin ? "Welcome Back" : "Create Account"}

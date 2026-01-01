@@ -81,7 +81,7 @@ const Settings = () => {
 
   // Settings state
   const [company, setCompany] = useState<CompanySettings>({
-    name: "ASSET DEVELOPMENT LTD",
+    name: "DOS ASSET DEVELOPMENT ",
     website: "",
     email: "",
     phone: "",
