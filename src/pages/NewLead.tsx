@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -141,6 +141,22 @@ const NewLead = () => {
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  const categories = useMemo(() => {
+    return Array.from(new Set(projects.map((p) => p.category).filter(Boolean)));
+  }, [projects]);
+
+  const areas = useMemo(() => {
+    return Array.from(new Set(projects.map((p) => p.area).filter(Boolean)));
+  }, [projects]);
+
+  const filteredProjects = useMemo(() => {
+    return projects.filter((p) => {
+      const matchesCategory = formData.property_type ? p.category === formData.property_type : true;
+      const matchesArea = formData.location ? p.area === formData.location : true;
+      return matchesCategory && matchesArea;
+    });
+  }, [projects, formData.property_type, formData.location]);
 
   // Fetch projects on mount
   useEffect(() => {
@@ -474,14 +490,17 @@ const NewLead = () => {
                         required
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select value" />
+                          <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="apartment">Apartment</SelectItem>
-                          <SelectItem value="villa">Villa</SelectItem>
-                          <SelectItem value="duplex">Duplex</SelectItem>
-                          <SelectItem value="plot">Plot</SelectItem>
-                          <SelectItem value="commercial">Commercial</SelectItem>
+                          {categories.length === 0 && (
+                            <SelectItem value="__none" disabled>No categories available</SelectItem>
+                          )}
+                          {categories.map((c) => (
+                            <SelectItem key={c} value={c}>
+                              {c}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -493,14 +512,17 @@ const NewLead = () => {
                         required
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select value" />
+                          <SelectValue placeholder="Select area" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="bashundhara">Bashundhara</SelectItem>
-                          <SelectItem value="gulshan">Gulshan</SelectItem>
-                          <SelectItem value="banani">Banani</SelectItem>
-                          <SelectItem value="uttara">Uttara</SelectItem>
-                          <SelectItem value="dhanmondi">Dhanmondi</SelectItem>
+                          {areas.length === 0 && (
+                            <SelectItem value="__none" disabled>No areas available</SelectItem>
+                          )}
+                          {areas.map((a) => (
+                            <SelectItem key={a} value={a}>
+                              {a}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -538,21 +560,37 @@ const NewLead = () => {
                                     <SelectValue placeholder="Select category" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="Apartment">Apartment</SelectItem>
-                                    <SelectItem value="Villa">Villa</SelectItem>
-                                    <SelectItem value="Duplex">Duplex</SelectItem>
-                                    <SelectItem value="Plot">Plot</SelectItem>
-                                    <SelectItem value="Commercial">Commercial</SelectItem>
+                                    {categories.length === 0 && (
+                                      <SelectItem value="__none" disabled>No categories available</SelectItem>
+                                    )}
+                                    {categories.map((c) => (
+                                      <SelectItem key={c} value={c}>
+                                        {c}
+                                      </SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                               </div>
                               <div className="space-y-2">
                                 <Label>Area</Label>
-                                <Input
+                                <Select
                                   value={newProject.area}
-                                  onChange={(e) => setNewProject({...newProject, area: e.target.value})}
-                                  placeholder="e.g., Bashundhara"
-                                />
+                                  onValueChange={(value) => setNewProject({...newProject, area: value})}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select area" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {areas.length === 0 && (
+                                      <SelectItem value="__none" disabled>No areas available</SelectItem>
+                                    )}
+                                    {areas.map((a) => (
+                                      <SelectItem key={a} value={a}>
+                                        {a}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               </div>
                             </div>
                             <DialogFooter>
@@ -571,7 +609,10 @@ const NewLead = () => {
                           <SelectValue placeholder="Select project" />
                         </SelectTrigger>
                         <SelectContent>
-                          {projects.map((project) => (
+                          {filteredProjects.length === 0 && (
+                            <SelectItem value="__none" disabled>No projects match selection</SelectItem>
+                          )}
+                          {filteredProjects.map((project) => (
                             <SelectItem key={project.id} value={project.name}>
                               {project.name} {project.area && `(${project.area})`}
                             </SelectItem>
