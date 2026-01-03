@@ -86,7 +86,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                 <img src="/favicon.ico" alt="Logo" className="h-6 w-6" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-foreground"> ASSET DEVELOPMENT </h1>
+                <h1 className="text-lg font-bold text-foreground"> DOS ASSET DEVELOPMENT </h1>
                 <p className="text-xs text-muted-foreground">Real Estate CRM</p>
               </div>
             </div>
